@@ -45,6 +45,9 @@ services:
       JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m"
       FRONTEND_REDIRECT_URI: ${FRONTEND_REDIRECT_URI:-http://localhost/auth/callback}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost/auth/oauth/google/callback}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-http://localhost/auth/oauth/discord/callback}
     depends_on:
       postgres:
         condition: service_healthy
