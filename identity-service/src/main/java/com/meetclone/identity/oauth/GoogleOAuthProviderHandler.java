@@ -30,7 +30,7 @@ public class GoogleOAuthProviderHandler implements OAuthProviderHandler {
             RestClient restClient,
             @Value("${app.oauth2.google.client-id}") String clientId,
             @Value("${app.oauth2.google.client-secret}") String clientSecret,
-            @Value("${app.oauth2.google.redirect-uri:http://localhost:8081/auth/oauth/google/callback}") String redirectUri
+            @Value("${app.oauth2.google.redirect-uri}") String redirectUri
     ) {
         this.restClient = restClient;
         this.clientId = clientId;

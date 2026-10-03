@@ -65,6 +65,10 @@ public class OAuthService {
         return getAuthUrl("GOOGLE");
     }
 
+    public String getDiscordAuthUrl() {
+        return getAuthUrl("DISCORD");
+    }
+
     @Transactional
     public LoginResponse handleCallback(String provider, String authCode) {
         String normalizedProvider = provider.toUpperCase(Locale.ROOT);
@@ -93,6 +97,11 @@ public class OAuthService {
     @Transactional
     public LoginResponse handleGoogleCallback(String authCode) {
         return handleCallback("GOOGLE", authCode);
+    }
+
+    @Transactional
+    public LoginResponse handleDiscordCallback(String authCode) {
+        return handleCallback("DISCORD", authCode);
     }
 
     private OAuthProviderHandler getHandler(String provider) {
