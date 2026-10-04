@@ -69,6 +69,10 @@ public class OAuthService {
         return getAuthUrl("DISCORD");
     }
 
+    public String getFacebookAuthUrl() {
+        return getAuthUrl("FACEBOOK");
+    }
+
     @Transactional
     public LoginResponse handleCallback(String provider, String authCode) {
         String normalizedProvider = provider.toUpperCase(Locale.ROOT);
@@ -102,6 +106,11 @@ public class OAuthService {
     @Transactional
     public LoginResponse handleDiscordCallback(String authCode) {
         return handleCallback("DISCORD", authCode);
+    }
+
+    @Transactional
+    public LoginResponse handleFacebookCallback(String authCode) {
+        return handleCallback("FACEBOOK", authCode);
     }
 
     private OAuthProviderHandler getHandler(String provider) {
