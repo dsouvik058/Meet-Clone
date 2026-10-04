@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Interactive Learning Playground & Live WebSocket Room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0f1d;
+            --surface: #131c31;
+            --surface-elevated: #1e2942;
+            --surface-glass: rgba(19, 28, 49, 0.75);
+            --border: #2a3754;
+            --border-highlight: #3b82f6;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --accent: #8b5cf6;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --code-bg: #070b14;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark) 45%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-title h1 {
+            font-size: 1.55rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa 10%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        /* Mode Switcher Tabs in Header */
+        .mode-switcher {
+            display: inline-flex;
+            background: var(--surface-elevated);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            gap: 4px;
+        }
+
+        .mode-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #93c5fd;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--warning);
+            box-shadow: 0 0 8px var(--warning);
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .status-dot.error {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        /* Live Room Connection Toolbar */
+        .live-toolbar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+        }
+
+        .input-group label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .input-field {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+        }
+
+        .quick-tag-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #93c5fd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .quick-tag-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: var(--primary);
+        }
+
+        /* 3-Column Layout */
+        .playground-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .playground-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .video-box {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            text-align: center;
+            padding: 16px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .video-tag {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            filter: brightness(1.1);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            filter: brightness(1.15);
+        }
+
+        .btn-secondary {
+            background: var(--surface-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #283754;
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Inspector Panel (Center) */
+        .inspector-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .steps-container {
+            display: flex;
+            gap: 6px;
+            background: var(--surface-elevated);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .step-tab {
+            flex: 1;
+            padding: 7px 10px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .step-tab.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .tab-badge {
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            font-weight: 700;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        .tab-badge:empty {
+            display: none;
+        }
+
+        .step-tab.active .tab-badge {
+            background: rgba(255, 255, 255, 0.22);
+            color: #fff;
+        }
+
+        .tab-badge.ready {
+            background: rgba(16, 185, 129, 0.25);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .explain-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: #bfdbfe;
+        }
+
+        .explain-box strong {
+            color: #60a5fa;
+        }
+
+        .code-box {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            max-height: 220px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .log-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-height: 160px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.70rem;
+            padding-right: 4px;
+        }
+
+        .log-item {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--primary);
+            color: #94a3b8;
+        }
+
+        .log-item.ws-in {
+            border-left-color: #38bdf8;
+            color: #bae6fd;
+        }
+
+        .log-item.ws-out {
+            border-left-color: #ec4899;
+            color: #fbcfe8;
+        }
+
+        .log-item.success {
+            border-left-color: var(--success);
+            color: #a7f3d0;
+        }
+
+        .log-item.candidate {
+            border-left-color: var(--accent);
+            color: #ddd6fe;
+        }
+
+        .log-item.error {
+            border-left-color: var(--danger);
+            color: #fca5a5;
+        }
+
+        /* Telemetry box */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: var(--surface-elevated);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Remote Peer Container in Live Mode */
+        .remote-peers-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .remote-peer-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            position: relative;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>WebRTC Interactive Learning Playground</h1>
+            <p>Step-by-step visual demonstration of SDP Offers, Answers, and WebSocket Trickle ICE</p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="mode-switcher">
+                <button class="mode-btn active" id="btnModeLocal" onclick="switchMode('local')">
+                    🧪 Local Simulator
+                </button>
+                <button class="mode-btn" id="btnModeLive" onclick="switchMode('live')">
+                    🌐 Live WebSocket Room
+                </button>
+            </div>
+
+            <div class="status-badge" id="connectionBadge">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="connectionStatus">Status: Disconnected</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- LIVE WEBSOCKET ROOM TOOLBAR (Active in Live Mode) -->
+    <section class="live-toolbar" id="liveToolbar" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div class="input-group">
+                <label>Signaling WS:</label>
+                <input type="text" class="input-field" id="wsUrlInput" value="ws://localhost:8083/ws/signaling" style="width: 230px;">
+            </div>
+
+            <div class="input-group">
+                <label>Room ID:</label>
+                <input type="text" class="input-field" id="roomIdInput" value="meet-101" style="width: 95px;">
+            </div>
+
+            <div class="input-group">
+                <label>My User ID:</label>
+                <input type="text" class="input-field" id="userIdInput" value="alice" style="width: 85px;">
+                <button class="quick-tag-btn" onclick="setQuickUser('alice', 'Alice Ghosh')">Alice</button>
+                <button class="quick-tag-btn" onclick="setQuickUser('bob', 'Bob Das')">Bob</button>
+            </div>
+
+            <div class="input-group">
+                <label>Name:</label>
+                <input type="text" class="input-field" id="displayNameInput" value="Alice Ghosh" style="width: 110px;">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-success" id="btnLiveConnect" onclick="toggleLiveRoom()">
+                🚀 Connect & Join Room
+            </button>
+        </div>
+    </section>
+
+    <main class="playground-grid">
+        <!-- LEFT: LOCAL PEER -->
+        <section class="card">
+            <div class="card-header">
+                <h2 id="localTitle"><span>📹</span> Peer A (Local Caller)</h2>
+                <span class="card-subtitle" id="localSubtitle">Local Camera Stream</span>
+            </div>
+
+            <div class="video-box">
+                <video id="localVideo" autoplay playsinline muted></video>
+                <div class="video-placeholder" id="localPlaceholder">
+                    <span style="font-size: 1.8rem;">📷</span>
+                    <span>Camera is currently off.<br>Click "Start Camera" below.</span>
+                </div>
+                <div class="video-tag">
+                    <span class="video-indicator"></span>
+                    <span id="localVideoLabel">Local Stream (getUserMedia)</span>
+                </div>
+            </div>
+
+            <!-- Local Simulator Controls -->
+            <div class="controls" id="localSimControls">
+                <button class="btn-primary" id="btnStartMedia">
+                    ▶ 1. Start Camera / Media
+                </button>
+                <button class="btn-secondary" id="btnCreateOffer" disabled>
+                    ⚡ 2. Generate SDP Offer
+                </button>
+            </div>
+
+            <!-- Live Mode Controls -->
+            <div class="controls" id="liveControls" style="display: none;">
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" id="btnToggleMic" onclick="toggleAudio()" style="flex: 1;">
+                        🎤 Mute Mic
+                    </button>
+                    <button class="btn-secondary" id="btnToggleCam" onclick="toggleVideo()" style="flex: 1;">
+                        📷 Turn Off Cam
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Tracks Active</div>
+                    <div class="stat-value" id="localTracksCount">0 / 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Signaling State</div>
+                    <div class="stat-value" id="peerASignalingState">stable</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CENTER: PROTOCOL INSPECTOR -->
+        <section class="card inspector-panel">
+            <div class="card-header">
+                <h2><span>🔍</span> Handshake Inspector</h2>
+                <span class="card-subtitle" id="inspectorSubtitle">Real-time Protocol Inspection</span>
+            </div>
+
+            <div class="steps-container">
+                <button class="step-tab active" id="tabOffer" onclick="switchInspectorTab('offer')">
+                    1. Offer (SDP) <span id="offerBadge" class="tab-badge"></span>
+                </button>
+                <button class="step-tab" id="tabAnswer" onclick="switchInspectorTab('answer')">
+                    2. Answer (SDP) <span id="answerBadge" class="tab-badge"></span>
+                </button>
+                <button class="step-tab" id="tabIce" onclick="switchInspectorTab('ice')">
+                    3. ICE Candidates <span id="iceBadge" class="tab-badge">0</span>
+                </button>
+            </div>
+
+            <div class="explain-box" id="stepExplanation">
+                <strong>What is happening?</strong><br>
+                Start by capturing your local camera stream, then generate an <strong>SDP Offer</strong>. The offer contains your media capabilities, supported video codecs (VP8/H264), and cryptographic keys.
+            </div>
+
+            <div class="code-box" id="inspectorCodeBox">// Waiting for WebRTC action...
+// Click "Start Camera" to begin.</div>
+
+            <div class="card-header" style="margin-top: 4px;">
+                <h3 style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Real-time Event Log</h3>
+                <span style="font-size: 0.72rem; color: #a78bfa;" id="candidateCountBadge">0 ICE candidates</span>
+            </div>
+
+            <ul class="log-list" id="eventLog">
+                <li class="log-item">[00:00:00] WebRTC Playground initialized. Ready for connections.</li>
+            </ul>
+        </section>
+
+        <!-- RIGHT: REMOTE PEER(S) -->
+        <section class="card" id="remoteSection">
+            <div class="card-header">
+                <h2 id="remoteTitle"><span>💻</span> Peer B (Callee / Receiver)</h2>
+                <span class="card-subtitle" id="remoteSubtitle">Receives Offer & Responds</span>
+            </div>
+
+            <!-- In Local Mode: Single Peer B Video -->
+            <div class="video-box" id="simRemoteBox">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="video-placeholder" id="remotePlaceholder">
+                    <span style="font-size: 1.8rem;">📡</span>
+                    <span>Waiting for WebRTC handshake...</span>
+                </div>
+                <div class="video-tag">Remote Media Pipe (SRTP P2P)</div>
+            </div>
+
+            <!-- In Live Mode: Dynamic Multi-Peer Video Grid -->
+            <div class="remote-peers-grid" id="liveRemoteGrid" style="display: none;">
+                <div class="video-box" id="liveWaitingBox">
+                    <div class="video-placeholder">
+                        <span style="font-size: 1.8rem;">⏳</span>
+                        <span>Waiting for other peers to join room...<br><small style="color: #64748b;">Open a second browser tab and join the same Room ID!</small></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Simulator Controls -->
+            <div class="controls" id="simRemoteControls">
+                <button class="btn-secondary" id="btnAcceptOffer" disabled>
+                    📩 3. Accept Offer & Send Answer
+                </button>
+                <button class="btn-success" id="btnCompleteHandshake" disabled>
+                    🔗 4. Exchange ICE Candidates
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Peer Connection</div>
+                    <div class="stat-value" id="peerBConnState">new</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Peers</div>
+                    <div class="stat-value" id="activePeersCount">0</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURATION & STATE
+        // ==========================================
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        let currentMode = 'local'; // 'local' | 'live'
+        let currentTab = 'offer';
+        let localStream = null;
+
+        // In-Memory Simulation State
+        let peerA = null;
+        let peerB = null;
+        let generatedOffer = null;
+        let generatedAnswer = null;
+        let peerACandidates = [];
+        let peerBCandidates = [];
+
+        // Live WebSocket State
+        let signalingSocket = null;
+        let isConnectedToRoom = false;
+        let liveOfferSdp = null;
+        let liveAnswerSdp = null;
+        let liveLocalCandidates = []; // my discovered candidates
+        const liveRemoteCandidates = {}; // peerId -> [candidates received]
+        const livePeerConnections = {}; // targetUserId -> RTCPeerConnection
+        const pendingIceBatch = {}; // targetUserId -> [candidates]
+        const iceDebounceTimers = {}; // targetUserId -> timerId
+        const earlyCandidateQueue = {}; // targetUserId -> [candidates]
+
+        // DOM References
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const localPlaceholder = document.getElementById('localPlaceholder');
+        const remotePlaceholder = document.getElementById('remotePlaceholder');
+        const eventLog = document.getElementById('eventLog');
+        const inspectorCodeBox = document.getElementById('inspectorCodeBox');
+        const stepExplanation = document.getElementById('stepExplanation');
+        const statusDot = document.getElementById('statusDot');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        function logEvent(message, type = '') {
+            const li = document.createElement('li');
+            li.className = `log-item ${type}`;
+            const time = new Date().toLocaleTimeString();
+            li.textContent = `[${time}] ${message}`;
+            eventLog.prepend(li);
+        }
+
+        // ==========================================
+        // 2. MODE SWITCHER (Local vs Live)
+        // ==========================================
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('btnModeLocal').classList.toggle('active', mode === 'local');
+            document.getElementById('btnModeLive').classList.toggle('active', mode === 'live');
+
+            const isLive = mode === 'live';
+            document.getElementById('liveToolbar').style.display = isLive ? 'flex' : 'none';
+            document.getElementById('localSimControls').style.display = isLive ? 'none' : 'flex';
+            document.getElementById('liveControls').style.display = isLive ? 'flex' : 'none';
+            document.getElementById('simRemoteBox').style.display = isLive ? 'none' : 'flex';
+            document.getElementById('liveRemoteGrid').style.display = isLive ? 'flex' : 'none';
+            document.getElementById('simRemoteControls').style.display = isLive ? 'none' : 'flex';
+
+            if (isLive) {
+                document.getElementById('localTitle').innerHTML = '<span>📹</span> My Stream';
+                document.getElementById('localSubtitle').textContent = 'Local Participant';
+                document.getElementById('remoteTitle').innerHTML = '<span>👥</span> Remote Participants';
+                document.getElementById('remoteSubtitle').textContent = 'Live P2P Mesh Video Grid';
+                stepExplanation.innerHTML = `
+                    <strong>Live WebSocket Room Mode Active</strong><br>
+                    Connected to Spring Boot signaling server at <code>ws://localhost:8083/ws/signaling</code>. Enter your Room ID and User ID above and click <strong>"Connect & Join Room"</strong>. Open a second tab to test multi-peer calling!
+                `;
+            } else {
+                document.getElementById('localTitle').innerHTML = '<span>📹</span> Peer A (Caller / You)';
+                document.getElementById('localSubtitle').textContent = 'Local Camera Stream';
+                document.getElementById('remoteTitle').innerHTML = '<span>💻</span> Peer B (Callee / Receiver)';
+                document.getElementById('remoteSubtitle').textContent = 'Receives Offer & Responds';
+            }
+            logEvent(`Switched mode to: ${isLive ? 'Live WebSocket Room' : 'Local Simulator'}`);
+            switchInspectorTab(currentTab);
+            updateCandidateBadge();
+        }
+
+        function setQuickUser(userId, displayName) {
+            document.getElementById('userIdInput').value = userId;
+            document.getElementById('displayNameInput').value = displayName;
+        }
+
+        // ==========================================
+        // 3. MEDIA CAPTURE & SYNTHETIC FALLBACK
+        // ==========================================
+        async function ensureLocalMedia() {
+            if (localStream) return localStream;
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                logEvent('Camera blocked by browser: Non-HTTPS IP origin is not a Secure Context', 'error');
+                logEvent('Tip: Use http://localhost:3000 on Laptop 1, or enable chrome://flags/#unsafely-treat-insecure-origin-as-secure on Laptop 2', 'warning');
+                return fallbackToSynthetic('Secure Context Required');
+            }
+
+            try {
+                // Try capturing both video and audio
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                localPlaceholder.style.display = 'none';
+                document.getElementById('localVideoLabel').textContent = 'Real Hardware Camera (Live)';
+                logEvent('Webcam and Microphone stream acquired successfully!', 'success');
+            } catch (err) {
+                logEvent(`Camera+Mic failed (${err.name}: ${err.message}). Trying video only...`, 'warning');
+                try {
+                    // Fallback to video only (in case mic is disabled/missing)
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    localVideo.srcObject = localStream;
+                    localPlaceholder.style.display = 'none';
+                    document.getElementById('localVideoLabel').textContent = 'Real Webcam (No Mic)';
+                    logEvent('Webcam stream acquired (Video only)', 'success');
+                } catch (err2) {
+                    logEvent(`Physical camera failed (${err2.name}: ${err2.message}). Using synthetic stream.`, 'error');
+                    return fallbackToSynthetic(err2.name);
+                }
+            }
+
+            document.getElementById('localTracksCount').textContent = 
+                `${localStream.getAudioTracks().length} Audio / ${localStream.getVideoTracks().length} Video`;
+            return localStream;
+        }
+
+        function fallbackToSynthetic(reason = 'Fallback') {
+            const userName = document.getElementById('displayNameInput').value || 'Peer';
+            localStream = createSyntheticStream(userName);
+            localVideo.srcObject = localStream;
+            localPlaceholder.style.display = 'none';
+            document.getElementById('localVideoLabel').textContent = `Synthetic Stream (${reason})`;
+            logEvent(`Activated animated test video stream for [${userName}]`, 'success');
+
+            document.getElementById('localTracksCount').textContent = 
+                `${localStream.getAudioTracks().length} Audio / ${localStream.getVideoTracks().length} Video`;
+            return localStream;
+        }
+
+        function createSyntheticStream(label = 'Meet Clone') {
+            const canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+            let frame = 0;
+
+            function draw() {
+                frame++;
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, '#1e1b4b');
+                grad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Animated pulsing orb
+                const x = canvas.width / 2 + Math.sin(frame * 0.05) * 120;
+                const y = canvas.height / 2 + Math.cos(frame * 0.05) * 40;
+                const radius = 35 + Math.sin(frame * 0.1) * 8;
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#38bdf8';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 18;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Live metadata watermark
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 20px Inter, sans-serif';
+                ctx.fillText(`Live Stream: ${label}`, 36, 46);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '13px JetBrains Mono, monospace';
+                ctx.fillText(`Timestamp: ${new Date().toISOString()}`, 36, 74);
+                ctx.fillText(`Frame Counter: ${frame}`, 36, 94);
+                ctx.fillText('WebRTC P2P Media Track Active', 36, 320);
+
+                requestAnimationFrame(draw);
+            }
+            draw();
+
+            // Completely silent audio track (zero beep sound)
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.0; // 0 volume = completely silent
+            osc.connect(gainNode);
+
+            const dst = audioCtx.createMediaStreamDestination();
+            gainNode.connect(dst);
+            osc.start();
+
+            const canvasStream = canvas.captureStream(30);
+            canvasStream.addTrack(dst.stream.getAudioTracks()[0]);
+            return canvasStream;
+        }
+
+        function toggleAudio() {
+            if (!localStream) return;
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                document.getElementById('btnToggleMic').textContent = audioTrack.enabled ? '🎤 Mute Mic' : '🔇 Unmute Mic';
+                logEvent(`Microphone ${audioTrack.enabled ? 'unmuted' : 'muted'}`);
+            }
+        }
+
+        function toggleVideo() {
+            if (!localStream) return;
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                document.getElementById('btnToggleCam').textContent = videoTrack.enabled ? '📷 Turn Off Cam' : '📷 Turn On Cam';
+                logEvent(`Camera ${videoTrack.enabled ? 'enabled' : 'disabled'}`);
+            }
+        }
+
+        // ==========================================
+        // 4. LIVE WEBSOCKET ROOM ENGINE (PHASE 4)
+        // ==========================================
+        async function toggleLiveRoom() {
+            if (isConnectedToRoom) {
+                leaveLiveRoom();
+            } else {
+                await joinLiveRoom();
+            }
+        }
+
+        async function joinLiveRoom() {
+            const wsUrl = document.getElementById('wsUrlInput').value.trim();
+            const roomId = document.getElementById('roomIdInput').value.trim();
+            const userId = document.getElementById('userIdInput').value.trim();
+            const displayName = document.getElementById('displayNameInput').value.trim();
+
+            if (!wsUrl || !roomId || !userId) {
+                alert('Please enter WebSocket URL, Room ID, and User ID');
+                return;
+            }
+
+            // Ensure camera/mic is active
+            await ensureLocalMedia();
+
+            logEvent(`Connecting to signaling WebSocket: ${wsUrl}...`);
+            signalingSocket = new WebSocket(wsUrl);
+
+            signalingSocket.onopen = () => {
+                logEvent(`Connected to signaling server! Joining room [${roomId}] as [${userId}]`, 'success');
+                statusDot.className = 'status-dot connected';
+                connectionStatus.textContent = `Connected: ${roomId} (${userId})`;
+
+                // 1. Send JOIN_ROOM
+                sendSignalingMessage({
+                    type: 'JOIN_ROOM',
+                    roomId: roomId,
+                    senderUserId: userId,
+                    data: { displayName: displayName }
+                });
+
+                isConnectedToRoom = true;
+                const btn = document.getElementById('btnLiveConnect');
+                btn.className = 'btn-danger';
+                btn.textContent = '🔴 Leave Room';
+            };
+
+            signalingSocket.onmessage = async (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    handleSignalingMessage(msg);
+                } catch (e) {
+                    logEvent(`Failed to parse WebSocket JSON: ${e.message}`, 'error');
+                }
+            };
+
+            signalingSocket.onerror = (err) => {
+                logEvent(`WebSocket transport error`, 'error');
+                statusDot.className = 'status-dot error';
+            };
+
+            signalingSocket.onclose = () => {
+                logEvent(`WebSocket connection closed`, 'error');
+                statusDot.className = 'status-dot';
+                connectionStatus.textContent = 'Status: Disconnected';
+                cleanupAllPeerConnections();
+                isConnectedToRoom = false;
+                const btn = document.getElementById('btnLiveConnect');
+                btn.className = 'btn-success';
+                btn.textContent = '🚀 Connect & Join Room';
+            };
+        }
+
+        function sendSignalingMessage(msg) {
+            if (signalingSocket && signalingSocket.readyState === WebSocket.OPEN) {
+                signalingSocket.send(JSON.stringify(msg));
+                logEvent(`Sent [${msg.type}] to ${msg.targetUserId || 'ROOM'}`, 'ws-out');
+            }
+        }
+
+        async function handleSignalingMessage(msg) {
+            logEvent(`Received [${msg.type}] from ${msg.senderUserId || 'SERVER'}`, 'ws-in');
+
+            switch (msg.type) {
+                case 'ROOM_JOINED':
+                    handleRoomJoined(msg);
+                    break;
+                case 'PEER_JOINED':
+                    handlePeerJoined(msg);
+                    break;
+                case 'OFFER':
+                    await handleRemoteOffer(msg);
+                    break;
+                case 'ANSWER':
+                    await handleRemoteAnswer(msg);
+                    break;
+                case 'ICE_CANDIDATE':
+                case 'ICE_CANDIDATES':
+                    handleRemoteIceCandidates(msg);
+                    break;
+                case 'PEER_LEFT':
+                    handlePeerLeft(msg);
+                    break;
+                case 'ERROR':
+                    logEvent(`Signaling Error: [${msg.data?.code}] ${msg.data?.message}`, 'error');
+                    break;
+            }
+        }
+
+        // When I join, server returns existing peers in the room
+        async function handleRoomJoined(msg) {
+            const peers = msg.data?.existingPeers || [];
+            document.getElementById('activePeersCount').textContent = peers.length;
+            logEvent(`Joined room successfully! Found ${peers.length} active peer(s): [${peers.join(', ')}]`, 'success');
+
+            // For every existing peer in the room, initiate WebRTC Offer
+            for (const targetPeerId of peers) {
+                logEvent(`Initiating WebRTC handshake to existing peer: [${targetPeerId}]`);
+                await initiateOfferToPeer(targetPeerId);
+            }
+        }
+
+        // When a new peer joins after me
+        function handlePeerJoined(msg) {
+            const newPeerId = msg.data?.newUserId;
+            const newPeerName = msg.data?.displayName || newPeerId;
+            logEvent(`New peer [${newPeerId}] joined room. Waiting for their Offer...`, 'success');
+            createRemoteVideoTile(newPeerId, newPeerName);
+            document.getElementById('activePeersCount').textContent = document.querySelectorAll('.remote-peer-card').length;
+        }
+
+        // Setup RTCPeerConnection for a peer
+        function getOrCreatePeerConnection(targetUserId) {
+            if (livePeerConnections[targetUserId]) {
+                return livePeerConnections[targetUserId];
+            }
+
+            const pc = new RTCPeerConnection(rtcConfig);
+            livePeerConnections[targetUserId] = pc;
+            pendingIceBatch[targetUserId] = [];
+            earlyCandidateQueue[targetUserId] = [];
+
+            // Add local audio and video tracks
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+            }
+
+            // Batched Trickle ICE (30ms debounce window)
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    liveLocalCandidates.push(event.candidate);
+                    updateCandidateBadge();
+                    if (currentTab === 'ice') renderIceTab();
+                    queueIceCandidateForBatching(targetUserId, event.candidate);
+                }
+            };
+
+            // Remote media track received
+            pc.ontrack = (event) => {
+                logEvent(`Received remote media stream from [${targetUserId}]!`, 'success');
+                attachRemoteStream(targetUserId, event.streams[0]);
+            };
+
+            // Monitor state changes
+            pc.onconnectionstatechange = () => {
+                const state = pc.connectionState;
+                logEvent(`Peer connection state for [${targetUserId}]: ${state}`);
+                document.getElementById('peerBConnState').textContent = state;
+                if (state === 'connected') {
+                    statusDot.className = 'status-dot connected';
+                    connectionStatus.textContent = `Connected: P2P with ${targetUserId}`;
+                    logEvent(`>>> P2P SRTP Video pipe connected with [${targetUserId}]! <<<`, 'success');
+                } else if (state === 'failed' || state === 'disconnected') {
+                    statusDot.className = 'status-dot error';
+                    connectionStatus.textContent = `P2P ${state}: ${targetUserId}`;
+                }
+            };
+
+            pc.onsignalingstatechange = () => {
+                document.getElementById('peerASignalingState').textContent = pc.signalingState;
+                logEvent(`Signaling state changed to: ${pc.signalingState}`);
+            };
+
+            pc.oniceconnectionstatechange = () => {
+                logEvent(`ICE connection state for [${targetUserId}]: ${pc.iceConnectionState}`, 'candidate');
+            };
+
+            pc.onicegatheringstatechange = () => {
+                logEvent(`ICE gathering state for [${targetUserId}]: ${pc.iceGatheringState}`, 'candidate');
+            };
+
+            return pc;
+        }
+
+        // 30ms Debounced ICE Candidate Batching
+        function queueIceCandidateForBatching(targetUserId, candidate) {
+            if (!pendingIceBatch[targetUserId]) pendingIceBatch[targetUserId] = [];
+            pendingIceBatch[targetUserId].push(candidate.toJSON());
+
+            if (iceDebounceTimers[targetUserId]) {
+                clearTimeout(iceDebounceTimers[targetUserId]);
+            }
+
+            iceDebounceTimers[targetUserId] = setTimeout(() => {
+                const batch = pendingIceBatch[targetUserId];
+                if (batch && batch.length > 0) {
+                    const myUserId = document.getElementById('userIdInput').value;
+                    const roomId = document.getElementById('roomIdInput').value;
+
+                    sendSignalingMessage({
+                        type: 'ICE_CANDIDATES',
+                        roomId: roomId,
+                        senderUserId: myUserId,
+                        targetUserId: targetUserId,
+                        data: { candidates: batch }
+                    });
+                    logEvent(`Flushed batch of ${batch.length} ICE candidate(s) to [${targetUserId}]`, 'candidate');
+                    pendingIceBatch[targetUserId] = [];
+                }
+            }, 30);
+        }
+
+        // Initiate Offer to a peer
+        async function initiateOfferToPeer(targetUserId) {
+            const pc = getOrCreatePeerConnection(targetUserId);
+            createRemoteVideoTile(targetUserId, targetUserId);
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            const myUserId = document.getElementById('userIdInput').value;
+            const roomId = document.getElementById('roomIdInput').value;
+
+            sendSignalingMessage({
+                type: 'OFFER',
+                roomId: roomId,
+                senderUserId: myUserId,
+                targetUserId: targetUserId,
+                data: { type: 'offer', sdp: offer.sdp }
+            });
+
+            // Display in Handshake Inspector
+            liveOfferSdp = offer.sdp;
+            generatedOffer = offer;
+            if (currentTab === 'offer') switchInspectorTab('offer');
+        }
+
+        // Handle Incoming Remote Offer
+        async function handleRemoteOffer(msg) {
+            const senderId = msg.senderUserId;
+            const pc = getOrCreatePeerConnection(senderId);
+            createRemoteVideoTile(senderId, senderId);
+
+            // Store in Inspector
+            liveOfferSdp = msg.data.sdp;
+            if (currentTab === 'offer') switchInspectorTab('offer');
+
+            await pc.setRemoteDescription(new RTCSessionDescription({
+                type: 'offer',
+                sdp: msg.data.sdp
+            }));
+
+            // Flush any early candidates that arrived before setRemoteDescription
+            flushEarlyCandidates(senderId, pc);
+
+            // Create and send Answer
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            const myUserId = document.getElementById('userIdInput').value;
+            const roomId = document.getElementById('roomIdInput').value;
+
+            sendSignalingMessage({
+                type: 'ANSWER',
+                roomId: roomId,
+                senderUserId: myUserId,
+                targetUserId: senderId,
+                data: { type: 'answer', sdp: answer.sdp }
+            });
+
+            liveAnswerSdp = answer.sdp;
+            generatedAnswer = answer;
+            if (currentTab === 'answer') switchInspectorTab('answer');
+        }
+
+        // Handle Incoming Remote Answer
+        async function handleRemoteAnswer(msg) {
+            const senderId = msg.senderUserId;
+            const pc = livePeerConnections[senderId];
+            if (!pc) return;
+
+            liveAnswerSdp = msg.data.sdp;
+            if (currentTab === 'answer') switchInspectorTab('answer');
+
+            await pc.setRemoteDescription(new RTCSessionDescription({
+                type: 'answer',
+                sdp: msg.data.sdp
+            }));
+
+            // Flush any early candidates
+            flushEarlyCandidates(senderId, pc);
+        }
+
+        // Handle Remote ICE Candidates (Single or Batched)
+        function handleRemoteIceCandidates(msg) {
+            const senderId = msg.senderUserId;
+            const pc = livePeerConnections[senderId];
+            const candidates = msg.type === 'ICE_CANDIDATES' 
+                ? (msg.data.candidates || [])
+                : [msg.data.candidate];
+
+            if (!liveRemoteCandidates[senderId]) liveRemoteCandidates[senderId] = [];
+
+            candidates.forEach(cand => {
+                if (!cand) return;
+                liveRemoteCandidates[senderId].push(cand);
+                const rtcCand = new RTCIceCandidate(cand);
+                if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+                    pc.addIceCandidate(rtcCand).catch(e => console.warn('addIceCandidate error:', e));
+                } else {
+                    // Queue until remote description is set
+                    if (!earlyCandidateQueue[senderId]) earlyCandidateQueue[senderId] = [];
+                    earlyCandidateQueue[senderId].push(rtcCand);
+                }
+            });
+            updateCandidateBadge();
+            if (currentTab === 'ice') renderIceTab();
+            logEvent(`Added ${candidates.length} candidate(s) from [${senderId}]`, 'candidate');
+        }
+
+        function flushEarlyCandidates(peerId, pc) {
+            const queue = earlyCandidateQueue[peerId] || [];
+            while (queue.length > 0) {
+                const c = queue.shift();
+                pc.addIceCandidate(c).catch(e => console.warn('addIceCandidate flush error:', e));
+            }
+        }
+
+        // Handle Peer Leaving
+        function handlePeerLeft(msg) {
+            const leftId = msg.data?.leftUserId || msg.senderUserId;
+            logEvent(`Peer [${leftId}] left the room`, 'error');
+
+            if (livePeerConnections[leftId]) {
+                livePeerConnections[leftId].close();
+                delete livePeerConnections[leftId];
+            }
+
+            removeRemoteVideoTile(leftId);
+            document.getElementById('activePeersCount').textContent = Object.keys(livePeerConnections).length;
+        }
+
+        // Leave Live Room
+        function leaveLiveRoom() {
+            if (signalingSocket && signalingSocket.readyState === WebSocket.OPEN) {
+                const myUserId = document.getElementById('userIdInput').value;
+                const roomId = document.getElementById('roomIdInput').value;
+
+                sendSignalingMessage({
+                    type: 'LEAVE_ROOM',
+                    roomId: roomId,
+                    senderUserId: myUserId
+                });
+                signalingSocket.close();
+            }
+            cleanupAllPeerConnections();
+            isConnectedToRoom = false;
+        }
+
+        function cleanupAllPeerConnections() {
+            Object.keys(livePeerConnections).forEach(peerId => {
+                livePeerConnections[peerId].close();
+                delete livePeerConnections[peerId];
+                removeRemoteVideoTile(peerId);
+            });
+            liveLocalCandidates = [];
+            Object.keys(liveRemoteCandidates).forEach(k => delete liveRemoteCandidates[k]);
+            liveOfferSdp = null;
+            liveAnswerSdp = null;
+            updateCandidateBadge();
+            document.getElementById('activePeersCount').textContent = '0';
+            document.getElementById('peerASignalingState').textContent = 'stable';
+            document.getElementById('peerBConnState').textContent = 'closed';
+            switchInspectorTab(currentTab);
+        }
+
+        // ==========================================
+        // 5. DYNAMIC REMOTE VIDEO TILES (GRID)
+        // ==========================================
+        function createRemoteVideoTile(peerId, displayName) {
+            const grid = document.getElementById('liveRemoteGrid');
+            const waitingBox = document.getElementById('liveWaitingBox');
+            if (waitingBox) waitingBox.style.display = 'none';
+
+            let tile = document.getElementById(`peer-tile-${peerId}`);
+            if (tile) return tile;
+
+            tile = document.createElement('div');
+            tile.className = 'remote-peer-card';
+            tile.id = `peer-tile-${peerId}`;
+            tile.innerHTML = `
+                <video id="video-${peerId}" autoplay playsinline></video>
+                <div class="video-placeholder" id="placeholder-${peerId}">
+                    <span>Connecting with ${displayName}...</span>
+                </div>
+                <div class="video-tag">
+                    <span class="video-indicator"></span>
+                    <span>${displayName} (${peerId})</span>
+                    <button type="button" onclick="toggleRemoteTileAudio('${peerId}')" id="mute-btn-${peerId}" style="margin-left: 6px; padding: 2px 7px; font-size: 0.68rem; font-weight: 500; background: rgba(255,255,255,0.18); border-radius: 4px; border: none; color: #fff; cursor: pointer;">🔊 Audio</button>
+                </div>
+            `;
+            grid.appendChild(tile);
+            return tile;
+        }
+
+        function toggleRemoteTileAudio(peerId) {
+            const videoEl = document.getElementById(`video-${peerId}`);
+            const btn = document.getElementById(`mute-btn-${peerId}`);
+            if (videoEl && btn) {
+                videoEl.muted = !videoEl.muted;
+                btn.textContent = videoEl.muted ? '🔇 Muted' : '🔊 Audio';
+                logEvent(`Remote audio for [${peerId}] ${videoEl.muted ? 'muted' : 'unmuted'}`);
+            }
+        }
+
+        function attachRemoteStream(peerId, stream) {
+            const videoEl = document.getElementById(`video-${peerId}`);
+            const placeholder = document.getElementById(`placeholder-${peerId}`);
+            if (videoEl) {
+                videoEl.srcObject = stream;
+                if (placeholder) placeholder.style.display = 'none';
+            }
+        }
+
+        function removeRemoteVideoTile(peerId) {
+            const tile = document.getElementById(`peer-tile-${peerId}`);
+            if (tile) tile.remove();
+
+            const waitingBox = document.getElementById('liveWaitingBox');
+            const remainingTiles = document.querySelectorAll('.remote-peer-card').length;
+            if (remainingTiles === 0 && waitingBox) {
+                waitingBox.style.display = 'flex';
+            }
+            document.getElementById('activePeersCount').textContent = remainingTiles;
+        }
+
+        // ==========================================
+        // 6. LOCAL SIMULATOR EVENT LISTENERS (MODE 1)
+        // ==========================================
+        const btnStartMedia = document.getElementById('btnStartMedia');
+        const btnCreateOffer = document.getElementById('btnCreateOffer');
+        const btnAcceptOffer = document.getElementById('btnAcceptOffer');
+        const btnCompleteHandshake = document.getElementById('btnCompleteHandshake');
+
+        btnStartMedia.addEventListener('click', async () => {
+            await ensureLocalMedia();
+            btnStartMedia.disabled = true;
+            btnCreateOffer.disabled = false;
+
+            stepExplanation.innerHTML = `
+                <strong>Step 1 Complete: Media Acquired!</strong><br>
+                The browser now has local audio/video tracks. Click <strong>"2. Generate SDP Offer"</strong> to have Peer A create an SDP offer.
+            `;
+            inspectorCodeBox.textContent = `MediaStream ID: ${localStream.id}\nVideo Tracks: ${localStream.getVideoTracks().map(t => t.label || 'Video').join(', ')}\nAudio Tracks: ${localStream.getAudioTracks().map(t => t.label || 'Audio').join(', ')}`;
+        });
+
+        btnCreateOffer.addEventListener('click', async () => {
+            peerA = new RTCPeerConnection(rtcConfig);
+            peerB = new RTCPeerConnection(rtcConfig);
+
+            localStream.getTracks().forEach(track => peerA.addTrack(track, localStream));
+
+            peerA.onicecandidate = (event) => {
+                if (event.candidate) {
+                    peerACandidates.push(event.candidate);
+                    updateCandidateBadge();
+                    logEvent(`Peer A found ICE candidate: [${event.candidate.type}] ${event.candidate.address || 'IP'}:${event.candidate.port}`, 'candidate');
+                    if (currentTab === 'ice') renderIceTab();
+                }
+            };
+
+            peerB.ontrack = (event) => {
+                logEvent('Peer B received remote WebRTC media track!', 'success');
+                remoteVideo.srcObject = event.streams[0];
+                remotePlaceholder.style.display = 'none';
+            };
+
+            peerB.onicecandidate = (event) => {
+                if (event.candidate) {
+                    peerBCandidates.push(event.candidate);
+                    updateCandidateBadge();
+                    logEvent(`Peer B found ICE candidate: [${event.candidate.type}] ${event.candidate.address || 'IP'}:${event.candidate.port}`, 'candidate');
+                    if (currentTab === 'ice') renderIceTab();
+                }
+            };
+
+            peerB.onconnectionstatechange = () => {
+                const state = peerB.connectionState;
+                document.getElementById('peerBConnState').textContent = state;
+                if (state === 'connected') {
+                    statusDot.className = 'status-dot connected';
+                    connectionStatus.textContent = 'Status: Peer-to-Peer Connected!';
+                    logEvent('WebRTC Media Pipe Established! Video is streaming directly P2P.', 'success');
+                }
+            };
+
+            peerA.onsignalingstatechange = () => {
+                document.getElementById('peerASignalingState').textContent = peerA.signalingState;
+                logEvent(`Peer A signaling state: ${peerA.signalingState}`);
+            };
+
+            peerB.onsignalingstatechange = () => {
+                logEvent(`Peer B signaling state: ${peerB.signalingState}`);
+            };
+
+            peerA.oniceconnectionstatechange = () => {
+                logEvent(`Peer A ICE connection state: ${peerA.iceConnectionState}`, 'candidate');
+            };
+
+            peerB.oniceconnectionstatechange = () => {
+                logEvent(`Peer B ICE connection state: ${peerB.iceConnectionState}`, 'candidate');
+            };
+
+            const offer = await peerA.createOffer();
+            await peerA.setLocalDescription(offer);
+            generatedOffer = offer;
+
+            logEvent('Peer A created and set local SDP Offer', 'success');
+            btnCreateOffer.disabled = true;
+            btnAcceptOffer.disabled = false;
+            switchInspectorTab('offer');
+        });
+
+        btnAcceptOffer.addEventListener('click', async () => {
+            await peerB.setRemoteDescription(generatedOffer);
+            logEvent('Peer B received and set Peer A\'s SDP Offer as RemoteDescription', 'success');
+
+            const answer = await peerB.createAnswer();
+            await peerB.setLocalDescription(answer);
+            generatedAnswer = answer;
+
+            await peerA.setRemoteDescription(answer);
+            logEvent('Peer A accepted Peer B\'s SDP Answer. Cryptographic & Codec negotiation complete!', 'success');
+
+            btnAcceptOffer.disabled = true;
+            btnCompleteHandshake.disabled = false;
+            switchInspectorTab('answer');
+        });
+
+        btnCompleteHandshake.addEventListener('click', async () => {
+            logEvent('Exchanging ICE network routing candidates...', 'candidate');
+
+            for (const candidate of peerACandidates) {
+                await peerB.addIceCandidate(candidate);
+            }
+            for (const candidate of peerBCandidates) {
+                await peerA.addIceCandidate(candidate);
+            }
+
+            logEvent('All ICE Candidates applied to peer connections!', 'success');
+            btnCompleteHandshake.disabled = true;
+            switchInspectorTab('ice');
+        });
+
+        // ==========================================
+        // 7. INSPECTOR TABS & SYNTAX COLORING
+        // ==========================================
+        function formatSdpWithSummary(sdp, type = 'Offer') {
+            if (!sdp) return '';
+            try {
+                const lines = sdp.split('\n');
+                const codecs = [];
+                let fingerprint = '';
+                let ufrag = '';
+                let setup = '';
+                let audioPort = null;
+                let videoPort = null;
+
+                lines.forEach(l => {
+                    const line = l.trim();
+                    if (line.startsWith('a=rtpmap:')) {
+                        const match = line.match(/a=rtpmap:\d+\s+([^\/\s]+)/i);
+                        if (match && !codecs.includes(match[1])) codecs.push(match[1]);
+                    } else if (line.startsWith('a=fingerprint:')) {
+                        fingerprint = line.substring(14);
+                    } else if (line.startsWith('a=ice-ufrag:')) {
+                        ufrag = line.substring(12);
+                    } else if (line.startsWith('a=setup:')) {
+                        setup = line.substring(8);
+                    } else if (line.startsWith('m=audio ')) {
+                        audioPort = line.split(' ')[1];
+                    } else if (line.startsWith('m=video ')) {
+                        videoPort = line.split(' ')[1];
+                    }
+                });
+
+                const summary = [
+                    `┌── [REAL-TIME SDP ${type.toUpperCase()} SUMMARY] ──────────────────────────┐`,
+                    `│ Role / Setup      : ${setup || (type === 'Offer' ? 'actpass (caller)' : 'active (callee)')}`,
+                    `│ Media Tracks      : ${audioPort ? 'Audio (Port ' + audioPort + ')' : 'No Audio'} | ${videoPort ? 'Video (Port ' + videoPort + ')' : 'No Video'}`,
+                    `│ Negotiated Codecs : ${codecs.join(', ') || 'Standard WebRTC codecs'}`,
+                    `│ DTLS Security     : ${fingerprint ? fingerprint.substring(0, 36) + '...' : 'DTLS-SRTP Enabled'}`,
+                    `│ ICE ufrag         : ${ufrag || 'Pending'}`,
+                    `└────────────────────────────────────────────────────────────────────────┘`,
+                    '',
+                    `// === RAW RFC 4566 / RFC 8866 SDP BODY (${lines.length} lines) ===`,
+                    sdp
+                ].join('\n');
+
+                return summary;
+            } catch (e) {
+                return sdp;
+            }
+        }
+
+        function updateTabBadges() {
+            const offerSdp = currentMode === 'live' ? liveOfferSdp : (generatedOffer ? generatedOffer.sdp : null);
+            const answerSdp = currentMode === 'live' ? liveAnswerSdp : (generatedAnswer ? generatedAnswer.sdp : null);
+
+            let totalIce = 0;
+            if (currentMode === 'live') {
+                totalIce += liveLocalCandidates.length;
+                Object.values(liveRemoteCandidates).forEach(arr => totalIce += arr.length);
+            } else {
+                totalIce = peerACandidates.length + peerBCandidates.length;
+            }
+
+            const offerBadge = document.getElementById('offerBadge');
+            if (offerBadge) {
+                if (offerSdp) {
+                    offerBadge.textContent = '✓ Ready';
+                    offerBadge.className = 'tab-badge ready';
+                } else {
+                    offerBadge.textContent = '';
+                    offerBadge.className = 'tab-badge';
+                }
+            }
+
+            const answerBadge = document.getElementById('answerBadge');
+            if (answerBadge) {
+                if (answerSdp) {
+                    answerBadge.textContent = '✓ Ready';
+                    answerBadge.className = 'tab-badge ready';
+                } else {
+                    answerBadge.textContent = '';
+                    answerBadge.className = 'tab-badge';
+                }
+            }
+
+            const iceBadge = document.getElementById('iceBadge');
+            if (iceBadge) {
+                iceBadge.textContent = totalIce;
+                if (totalIce > 0) {
+                    iceBadge.className = 'tab-badge ready';
+                } else {
+                    iceBadge.className = 'tab-badge';
+                }
+            }
+        }
+
+        function switchInspectorTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.step-tab').forEach(b => b.classList.remove('active'));
+            if (tab === 'offer') document.getElementById('tabOffer').classList.add('active');
+            if (tab === 'answer') document.getElementById('tabAnswer').classList.add('active');
+            if (tab === 'ice') document.getElementById('tabIce').classList.add('active');
+
+            updateTabBadges();
+
+            if (tab === 'offer') {
+                stepExplanation.innerHTML = `
+                    <strong>SDP Offer (Session Description Protocol)</strong><br>
+                    Contains supported video codecs (VP8/VP9/H264), audio codecs (Opus), resolution bounds, and DTLS fingerprint keys for end-to-end encryption.
+                `;
+                const sdp = currentMode === 'live' ? liveOfferSdp : (generatedOffer ? generatedOffer.sdp : null);
+                inspectorCodeBox.textContent = sdp 
+                    ? formatSdpWithSummary(sdp, 'Offer')
+                    : '// Offer not yet created or received. Connect to a room with another peer to see live SDP.';
+            } else if (tab === 'answer') {
+                stepExplanation.innerHTML = `
+                    <strong>SDP Answer</strong><br>
+                    Peer accepts offered parameters, selects agreed codecs, and returns its own cryptographic keys. Both peers can now decrypt each other's SRTP packets.
+                `;
+                const sdp = currentMode === 'live' ? liveAnswerSdp : (generatedAnswer ? generatedAnswer.sdp : null);
+                inspectorCodeBox.textContent = sdp 
+                    ? formatSdpWithSummary(sdp, 'Answer')
+                    : '// Answer not yet created or received. Waiting for callee peer response.';
+            } else if (tab === 'ice') {
+                stepExplanation.innerHTML = `
+                    <strong>ICE Candidates (Interactive Connectivity Establishment)</strong><br>
+                    Discovered network paths: <code>host</code> (local LAN IP), <code>srflx</code> (public IP via STUN), and <code>relay</code> (via TURN).
+                `;
+                renderIceTab();
+            }
+        }
+
+        function renderIceTab() {
+            let text = '';
+            if (currentMode === 'live') {
+                text = '=== LIVE WEBSOCKET ICE CANDIDATES ===\n\n';
+                text += `My Discovered Local Candidates (${liveLocalCandidates.length}):\n`;
+                if (liveLocalCandidates.length === 0) {
+                    text += '  (None gathered yet - waiting for connection/STUN discovery...)\n';
+                } else {
+                    liveLocalCandidates.forEach((c, i) => {
+                        const cand = typeof c.toJSON === 'function' ? c.toJSON() : c;
+                        const candidateStr = cand.candidate || (typeof c === 'string' ? c : '');
+                        const typ = c.type || extractCandidateField(candidateStr, 'typ') || 'host';
+                        const proto = c.protocol || extractCandidateField(candidateStr, 'udp') || 'udp';
+                        const addr = c.address || c.ip || extractCandidateField(candidateStr, 'addr') || 'LAN';
+                        const port = c.port || extractCandidateField(candidateStr, 'port') || '-';
+                        text += `  [${i + 1}] Type: ${typ.toUpperCase()} | Protocol: ${proto.toUpperCase()} | Address: ${addr}:${port}\n`;
+                        if (candidateStr) text += `      Raw: ${candidateStr}\n`;
+                    });
+                }
+
+                text += '\nRemote Candidates Received via WebSocket:\n';
+                const remotePeerKeys = Object.keys(liveRemoteCandidates);
+                if (remotePeerKeys.length === 0) {
+                    text += '  (None received yet from remote peers)\n';
+                } else {
+                    remotePeerKeys.forEach(peerId => {
+                        const list = liveRemoteCandidates[peerId] || [];
+                        text += `  From Peer [${peerId}] (${list.length} candidate${list.length === 1 ? '' : 's'}):\n`;
+                        list.forEach((c, i) => {
+                            const cand = typeof c.toJSON === 'function' ? c.toJSON() : c;
+                            const candidateStr = cand.candidate || (typeof c === 'string' ? c : '');
+                            const typ = c.type || extractCandidateField(candidateStr, 'typ') || 'host';
+                            const proto = c.protocol || extractCandidateField(candidateStr, 'udp') || 'udp';
+                            const addr = c.address || c.ip || extractCandidateField(candidateStr, 'addr') || 'Remote IP';
+                            const port = c.port || extractCandidateField(candidateStr, 'port') || '-';
+                            text += `    [${i + 1}] Type: ${typ.toUpperCase()} | Protocol: ${proto.toUpperCase()} | Address: ${addr}:${port}\n`;
+                            if (candidateStr) text += `        Raw: ${candidateStr}\n`;
+                        });
+                    });
+                }
+            } else {
+                text = '=== DISCOVERED ICE CANDIDATES (LOCAL SIMULATOR) ===\n\n';
+                text += `Peer A Candidates (${peerACandidates.length}):\n`;
+                if (peerACandidates.length === 0) {
+                    text += '  (None gathered yet. Click "2. Generate SDP Offer" to start gathering)\n';
+                } else {
+                    peerACandidates.forEach((c, i) => {
+                        text += `  [${i + 1}] Type: ${(c.type || 'host').toUpperCase()} | Protocol: ${(c.protocol || 'udp').toUpperCase()} | Address: ${c.address}:${c.port} | Foundation: ${c.foundation || '-'}\n`;
+                        if (c.candidate) text += `      Raw: ${c.candidate}\n`;
+                    });
+                }
+                text += `\nPeer B Candidates (${peerBCandidates.length}):\n`;
+                if (peerBCandidates.length === 0) {
+                    text += '  (None gathered yet. Click "3. Accept Offer & Send Answer" to start gathering)\n';
+                } else {
+                    peerBCandidates.forEach((c, i) => {
+                        text += `  [${i + 1}] Type: ${(c.type || 'host').toUpperCase()} | Protocol: ${(c.protocol || 'udp').toUpperCase()} | Address: ${c.address}:${c.port} | Foundation: ${c.foundation || '-'}\n`;
+                        if (c.candidate) text += `      Raw: ${c.candidate}\n`;
+                    });
+                }
+            }
+            inspectorCodeBox.textContent = text;
+        }
+
+        function extractCandidateField(str, field) {
+            if (!str) return '';
+            const parts = str.split(' ');
+            if (field === 'typ') {
+                const idx = parts.indexOf('typ');
+                if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+            }
+            if (field === 'udp') {
+                if (parts[2]) return parts[2].toLowerCase();
+            }
+            if (field === 'addr') {
+                if (parts[4]) return parts[4];
+            }
+            if (field === 'port') {
+                if (parts[5]) return parts[5];
+            }
+            return '';
+        }
+
+        function updateCandidateBadge() {
+            let total = 0;
+            if (currentMode === 'live') {
+                total += liveLocalCandidates.length;
+                Object.values(liveRemoteCandidates).forEach(arr => total += arr.length);
+            } else {
+                total = peerACandidates.length + peerBCandidates.length;
+            }
+            document.getElementById('candidateCountBadge').textContent = `${total} ICE candidates`;
+            updateTabBadges();
+        }
+    </script>
+</body>
+</html>

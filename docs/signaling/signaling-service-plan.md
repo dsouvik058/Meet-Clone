@@ -275,7 +275,7 @@ This is how the system executes end-to-end when a meeting runs:
 ---
 
 ### Phase 4: Client & Testing Lab Upgrade
-1. **`learning-lab/webrtc-playground.html` Upgrade**:
+1. **`../../testing_lab` Upgrade**:
    - Add a **Live WebSocket Room Mode**:
      - Input field for `Room ID` (e.g. `meet-dev-1`) and `User ID` (e.g. `alice`, `bob`).
      - "Connect to Signaling Server" button (`ws://localhost:8083/ws/signaling`).
