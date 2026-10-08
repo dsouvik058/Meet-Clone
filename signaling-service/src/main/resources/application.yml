@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: signaling-service
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
   data:
     redis:
       host: ${REDIS_HOST:localhost}
