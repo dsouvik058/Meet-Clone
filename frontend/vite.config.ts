@@ -1,0 +1,48 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 3000,
+    strictPort: true,
+    proxy: {
+      '/auth': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/meetings': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/recordings': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/notifications': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:80',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:80',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
+});

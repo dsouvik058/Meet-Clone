@@ -11,6 +11,7 @@ services:
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - frontend
       - identity-service
       - meeting-service
       - signaling-service
@@ -20,11 +21,25 @@ services:
       - meet-network
 
   # =============================================================
-  # 2. SPRING BOOT MICROSERVICES
+  # 2. FRONTEND CLIENT (React TypeScript SPA)
+  # =============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: meet-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - meet-network
+
+  # =============================================================
+  # 3. SPRING BOOT MICROSERVICES
   # =============================================================
   identity-service:
     build:
-      context: ./identity-service
+      context: ./backend/identity-service
       dockerfile: Dockerfile
     container_name: meet-identity-service
     restart: unless-stopped
@@ -61,7 +76,7 @@ services:
 
   meeting-service:
     build:
-      context: ./meeting-service
+      context: ./backend/meeting-service
       dockerfile: Dockerfile
     container_name: meet-meeting-service
     restart: unless-stopped
@@ -84,7 +99,7 @@ services:
 
   signaling-service:
     build:
-      context: ./signaling-service
+      context: ./backend/signaling-service
       dockerfile: Dockerfile
     container_name: meet-signaling-service
     restart: unless-stopped
@@ -108,7 +123,7 @@ services:
 
   recording-service:
     build:
-      context: ./recording-service
+      context: ./backend/recording-service
       dockerfile: Dockerfile
     container_name: meet-recording-service
     restart: unless-stopped
@@ -134,7 +149,7 @@ services:
 
   notification-service:
     build:
-      context: ./notification-service
+      context: ./backend/notification-service
       dockerfile: Dockerfile
     container_name: meet-notification-service
     restart: unless-stopped
