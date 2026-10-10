@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #202124;
+    color: #e8eaed;
+    font-family: 'Google Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Custom scrollbar matching Orbit dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #5f6368;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #80868b;
+  }
+}
+
+@layer components {
+  /* Orbit control circle button */
+  .meet-btn-icon {
+    @apply flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-meet-blue focus:ring-offset-meet-dark;
+  }
+
+  .meet-btn-icon-tile {
+    @apply bg-meet-tile hover:bg-meet-hover active:bg-meet-active;
+  }
+
+  .meet-btn-icon-danger {
+    @apply bg-meet-red hover:bg-meet-red-hover text-white;
+  }
+
+  .meet-btn-icon-toggled {
+    @apply bg-meet-red hover:bg-meet-red-hover text-white;
+  }
+
+  /* Orbit Pill Button */
+  .meet-btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-2.5 rounded-full font-medium text-sm text-meet-dark bg-meet-blue hover:bg-meet-blue-hover transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-meet-blue focus:ring-offset-meet-dark;
+  }
+
+  .meet-btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-2.5 rounded-full font-medium text-sm text-meet-blue hover:bg-meet-blue/10 border border-meet-tile transition-colors focus:outline-none;
+  }
+
+  /* Video Tile Card */
+  .meet-tile-card {
+    @apply relative bg-meet-tile rounded-2xl overflow-hidden transition-all duration-300 shadow-lg border border-meet-tile/60 flex items-center justify-center;
+  }
+
+  /* Active Speaker Pulse Ring */
+  .meet-speaker-active {
+    @apply ring-4 ring-meet-green shadow-meet-speaker;
+  }
+
+  /* Floating Control Bar Container */
+  .meet-control-bar {
+    @apply fixed bottom-0 left-0 right-0 h-20 bg-meet-dark/95 backdrop-blur-md px-6 flex items-center justify-between border-t border-white/5 z-50;
+  }
+}

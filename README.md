@@ -1,6 +1,26 @@
 # Google Meet Clone — 5 Microservices Architecture (Spring Boot)
 
-This repository contains the complete 5-microservice architecture for a full-featured Google Meet clone built with Java and Spring Boot.
+This repository contains the complete 5-microservice architecture and React frontend for a full-featured Google Meet clone built with Java, Spring Boot, WebRTC, and React (TypeScript).
+
+## Repository Structure
+
+```text
+Meet-Clone/
+├── backend/                        # 5 Spring Boot Microservices
+│   ├── identity-service/           # Auth, OAuth2 (Google/Discord/Facebook), User Profiles (:8081)
+│   ├── meeting-service/            # Meeting rooms, join codes, chat persistence (:8082)
+│   ├── signaling-service/          # WebSockets, SDP Offer/Answer, Kurento SFU (:8083)
+│   ├── recording-service/          # Cloud recording, AWS S3 upload (:8084)
+│   ├── notification-service/       # Waiting room, presence alerts (:8085)
+│   └── pom.xml                     # Backend aggregator POM
+├── frontend/                       # Google Meet Web Client (React + TS + Tailwind)
+│   ├── src/                        # Google Meet UI, WebRTC, and Zustand stores
+│   ├── package.json
+│   └── vite.config.ts              # Port 3000 dev server with Nginx Gateway proxy
+├── docker/                         # Nginx API gateway configuration & Postgres init
+├── docker-compose.yml              # Full multi-container cluster orchestration
+└── .env                            # Centralized environment configuration
+```
 
 ## Microservices Overview
 
